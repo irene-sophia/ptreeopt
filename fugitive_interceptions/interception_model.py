@@ -14,11 +14,11 @@ class FugitiveInterception():
         self.graph = graph
         self.units_start = units_start
         self.fugitive_start = fugitive_start
-        self.units_current = {'unit'+str(u): units_start[u] for u in range(U)}
+        self.units_current = {f'unit{u}': units_start[u] for u in range(U)}
         self.num_sensors = num_sensors
         self.sensor_locations = sensor_locations
 
-        units_plan = {'unit'+str(u): nx.shortest_path(G=graph, source=units_start[u], target=fugitive_start) for u in range(U)}
+        units_plan = {f'unit{u}': nx.shortest_path(G=graph, source=units_start[u], target=fugitive_start) for u in range(U)}
         self.units_plan = units_plan
 
     def escape_route(self):
@@ -52,7 +52,7 @@ class FugitiveInterception():
         U = self.U
         units_plan = self.units_plan
         units_current = self.units_current
-        unit_routes_final = {'unit'+str(u): [self.units_start[u]] for u in range(U)}
+        unit_routes_final = {f'unit{u}': [self.units_start[u]] for u in range(U)}
         policies = [None]
 
         # simulate fugitive escape route (different each function evaluation!)
@@ -87,15 +87,15 @@ class FugitiveInterception():
 
             # 2) update current position
             for u in range(U):
-                if len(units_plan[f'unit{u}']) > 0:  #  TODO - implement elsewhere
-                    units_current['unit'+str(u)] = units_plan['unit'+str(u)][0]
+                if len(units_plan[f'unit{u}']) > 0:
+                    units_current[f'unit{u}'] = units_plan[f'unit{u}'][0]
             # 3) delete first entry from path list;
             for u in range(U):
-                if len(units_plan ['unit'+str(u)]) > 0:
-                    del units_plan['unit'+str(u)][0]
+                if len(units_plan[f'unit{u}']) > 0:
+                    del units_plan[f'unit{u}'][0]
             # 4) log past positions
             for u in range(U):
-                unit_routes_final['unit'+str(u)].append(units_current['unit'+str(u)])
+                unit_routes_final[f'unit{u}'].append(units_current[f'unit{u}'])
 
             # for rollout / visualization
             if mode == 'simulation':
@@ -106,12 +106,12 @@ class FugitiveInterception():
             df['policy'] = pd.Series(policies, dtype='category')
             df['fugitive_route'] = pd.Series(fugitive_route)
             for u in range(U):
-                df['unit'+str(u)] = pd.Series(unit_routes_final['unit'+str(u)])
+                df[f'unit{u}'] = pd.Series(unit_routes_final[f'unit{u}'])
 
             interception_dict = {}
             for u in range(U):
-                interception_dict['unit' + str(u)] = [i for i, j in
-                                                      zip(unit_routes_final['unit' + str(u)], fugitive_route) if
+                interception_dict[f'unit{u}'] = [i for i, j in
+                                                      zip(unit_routes_final[f'unit{u}'], fugitive_route) if
                                                       i == j]
 
             return df, any(len(value) for value in interception_dict.values())
@@ -120,7 +120,7 @@ class FugitiveInterception():
             # objective function: calculate overlap with predicted escape routes
             interception_dict = {}
             for u in range(U):
-                interception_dict['unit'+str(u)] = [i for i, j in zip(unit_routes_final['unit'+str(u)], fugitive_route) if i == j]
+                interception_dict[f'unit{u}'] = [i for i, j in zip(unit_routes_final[f'unit{u}'], fugitive_route) if i == j]
             # return objective value
             if any(len(value) for value in interception_dict.values()):
                 return 1
