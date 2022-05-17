@@ -2,8 +2,7 @@ import sys
 
 sys.path.append('..')
 
-import pygraphviz as pgv
-
+# import pygraphviz as pgv
 import numpy as np
 import networkx as nx
 import pickle
