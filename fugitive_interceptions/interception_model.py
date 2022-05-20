@@ -123,6 +123,6 @@ class FugitiveInterception():
                 interception_dict[f'unit{u}'] = [i for i, j in zip(unit_routes_final[f'unit{u}'], fugitive_route) if i == j]
             # return objective value
             if any(len(value) for value in interception_dict.values()):
-                return 1
+                return 0  # maximize interception
             else:
-                return 0
+                return 1

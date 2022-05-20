@@ -2,12 +2,14 @@ import networkx as nx
 import matplotlib.pyplot as plt
 import matplotlib
 import imageio
+import math
 import glob
 import os
 
 
-def draw_edges(graph, results_df, step, T, U):
-    fugitive_route = results_df['fugitive_route'].tolist()
+def draw_edges(graph, results_df, step, T, U, route_to_vis):
+    fugitive_route = results_df[f'fugitive_route{route_to_vis}'].tolist()
+
     edges_fugitive = []
     edges_units = []
 
@@ -31,14 +33,14 @@ def draw_edges(graph, results_df, step, T, U):
             edge_colormap[index] = 'tab:orange'
             edge_weightmap[index] = 2
         # units
-        if edge in edges_units:
+        elif edge in edges_units:
             edge_colormap[index] = 'tab:blue'
             edge_weightmap[index] = 2
 
     return edge_colormap, edge_weightmap
 
 
-def draw_nodes(graph, results_df, sensor_locations, U, step, labels, pos):
+def draw_nodes(graph, results_df, sensor_locations, U, R, step, labels, pos, route_to_vis):
     node_colormap = ['lightgray']*len(graph.nodes)
     labels_at_step = labels.copy()
 
@@ -52,13 +54,16 @@ def draw_nodes(graph, results_df, sensor_locations, U, step, labels, pos):
             node_colormap[index] = 'tab:red'
             labels_at_step[node] = 'sensor'+str(sensor_locations.index(node))
         # fugitive route
-        if node == results_df['fugitive_route'].tolist()[step]:
-            if node_colormap[index] == 'lightgray':
+        if node == results_df[f'fugitive_route{route_to_vis}'].tolist()[step]:
+            if node_colormap[index] == 'tab:orange':
+                node_colormap[index] = 'tab:orange'
+            elif node_colormap[index] == 'lightgray':
                 node_colormap[index] = 'tab:orange'
             else:
                 sameplace_graph.add_node(node)
                 sameplace_pos[node] = pos[node]
-                sameplace_colormap.append('tab:orange')
+                if len(sameplace_graph.nodes) > len(sameplace_colormap):  # for if 3 at the same place
+                    sameplace_colormap.append('tab:orange')
         # unit routes final
         for u in range(U):
             if node == results_df['unit'+str(u)].tolist()[step]:
@@ -68,43 +73,57 @@ def draw_nodes(graph, results_df, sensor_locations, U, step, labels, pos):
                 else:
                     sameplace_graph.add_node(node)
                     sameplace_pos[node] = pos[node]
-                    sameplace_colormap.append('tab:blue')
+                    if len(sameplace_graph.nodes) > len(sameplace_colormap):  # for if 3 at the same place
+                        sameplace_colormap.append('tab:blue')
 
     return node_colormap, labels_at_step, sameplace_colormap, sameplace_graph, sameplace_pos
 
 
-def plot_result(graph, pos, T, U, results_df, sensor_locations, labels):
-    for step in range(T):
-        node_colormap, labels_at_step, sameplace_colormap, sameplace_graph, sameplace_pos = draw_nodes(graph, results_df, sensor_locations, U, step, labels, pos)
-        edge_colormap, edge_weightmap = draw_edges(graph, results_df, step, T, U)
+def plot_result(graph, pos, T, U, R, results_df, success, sensor_locations, labels):
+    for route_to_vis in range(R):
+        for step in range(T):
 
-        nx.draw_networkx_nodes(G=graph, pos=pos,
-                               node_color=node_colormap, alpha=0.9,
-                               node_shape=matplotlib.markers.MarkerStyle(marker='o', fillstyle='full'))
+            fig, ax = plt.subplots(nrows=2, ncols=1, figsize=(15,15))  # , gridspec_kw={'height_ratios': [1, 0.6]}
+            node_colormap, labels_at_step, sameplace_colormap, sameplace_graph, sameplace_pos = draw_nodes(graph, results_df, sensor_locations, U, R, step, labels, pos, route_to_vis)
+            edge_colormap, edge_weightmap = draw_edges(graph, results_df, step, T, U, route_to_vis)
 
-        nx.draw_networkx_labels(G=graph, pos=pos, labels=labels_at_step, font_size=10)
+            nx.draw_networkx_nodes(G=graph, pos=pos,
+                                   node_color=node_colormap, alpha=0.9,
+                                   node_shape=matplotlib.markers.MarkerStyle(marker='o', fillstyle='full'),
+                                   ax=ax[0])
 
-        if len(sameplace_pos) > 0:
-            nx.draw_networkx_nodes(G=sameplace_graph, pos=sameplace_pos,
-                                   node_color=sameplace_colormap, alpha=0.9,
-                                   node_shape=matplotlib.markers.MarkerStyle(marker='o', fillstyle='bottom'))
+            nx.draw_networkx_labels(G=graph, pos=pos, labels=labels_at_step, font_size=10, ax=ax[0])
 
-        nx.draw_networkx_edges(G=graph, pos=pos, edge_color=edge_colormap, width=edge_weightmap)
+            if len(sameplace_pos) > 0:
+                nx.draw_networkx_nodes(G=sameplace_graph, pos=sameplace_pos,
+                                       node_color=sameplace_colormap, alpha=0.9,
+                                       node_shape=matplotlib.markers.MarkerStyle(marker='o', fillstyle='bottom'),
+                                       ax=ax[0])
 
-        labels_at_step.clear()
-        ax = plt.gca()
-        ax.set_aspect('equal')
-        ax.set_facecolor('white')
-        #plt.legend(loc=1)
-        ax.text(0.3, 0.3, 't = '+str(step), bbox=dict(facecolor='yellow', alpha=0.5))
-        plt.savefig('figs/test_' + str(step) + '.png')
-        plt.clf()
+            nx.draw_networkx_edges(G=graph, pos=pos, edge_color=edge_colormap, width=edge_weightmap, ax=ax[0])
 
-    with imageio.get_writer('figs/mygif.gif', mode='I', duration=1) as writer:
-        for filename in ['figs/test_'+str(step)+'.png' for step in range(T)]:
-            image = imageio.imread(filename)
-            writer.append_data(image)
+            labels_at_step.clear()
+            #ax[0] = plt.gca()
+            ax[0].set_aspect('equal')
+            ax[0].set_facecolor('white')
+            #plt.legend(loc=1)
+            ax[0].text(-0.9, 4, 't='+str(step), bbox=dict(facecolor='lightgray', alpha=0.5))
+            ax[0].text(-1.1, 3, 'route=' + str(route_to_vis), bbox=dict(facecolor='lightgray', alpha=0.5))
+            ax[0].text(-1.7, 2, 'intercepted=' + str(success[f'route{route_to_vis}']), bbox=dict(facecolor='lightgray', alpha=0.5))
+
+            optimal_tree = plt.imread('figs/optimaltree.png')
+            ax[1].imshow(optimal_tree)
+            ax[1].axis('off')
+
+            plt.savefig('figs/test_route'+str(route_to_vis) + '_step' + str(step) + '.png', bbox_inches='tight')
+            plt.clf()
+
+    with imageio.get_writer('figs/mygif.gif', mode='I', duration=0.5) as writer:
+        for r in range(R):
+            for filename in ['figs/test_route'+str(r)+'_step'+str(step)+'.png' for step in range(T)]:
+                image = imageio.imread(filename)
+                writer.append_data(image)
 
     # remove files
-    for filename in set(['figs/test_'+str(step)+'.png' for step in range(T)]):
+    for filename in set(['figs/test_route'+str(r)+'_step'+str(step)+'.png' for step in range(T) for r in range(R)]):
         os.remove(filename)
