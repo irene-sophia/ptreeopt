@@ -18,7 +18,7 @@ from ptreeopt.plotting import *
 
 
 # Example to run optimization and save results
-np.random.seed(112)
+#np.random.seed(112)
 
 
 def graph_func(N):
@@ -49,7 +49,7 @@ def graph_func(N):
     return G, labels, pos
 
 
-N = 10
+N = 5
 T = 10
 U = 3
 R = 20
@@ -68,17 +68,17 @@ algorithm = PTreeOpt(model.f,
                      #discrete_features=['Minute'] + [f"sensor{s}" for s in range(num_sensors)],
                      discrete_actions=True,
                      action_names=[f"unit{u}_to_node{i}" for u in range(U) for i, _ in enumerate(graph.nodes)],
-                     mu=20,
+                     mu=40,  # 20
                      cx_prob=0.70,
                      population_size=100,
-                     max_depth=5
+                     max_depth=10  # 5
                      )
 
 if __name__ == '__main__':
     logging.basicConfig(level=logging.INFO,
                         format='[%(processName)s/%(levelname)s:%(filename)s:%(funcName)s] %(message)s')
 
-    best_solution, best_score, snapshots = algorithm.run(max_nfe=2000,
+    best_solution, best_score, snapshots = algorithm.run(max_nfe=10000,
                                                          log_frequency=100,
                                                          snapshot_frequency=100)
 
@@ -92,6 +92,7 @@ if __name__ == '__main__':
                              num_sensors=num_sensors, sensor_locations=sensor_locations)
     results_df, success = model.f(P, mode='simulation')
     print('Simulation: interception percentage: ', (sum(success.values()) * 100)/R)
+    print(results_df['policy'])
 
     plot_result(graph, pos, T, U, R, results_df, success, sensor_locations, labels)
 

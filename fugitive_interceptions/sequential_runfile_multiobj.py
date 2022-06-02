@@ -10,7 +10,7 @@ import logging
 from random import sample
 import random
 
-from interception_model_robust import FugitiveInterception
+from interception_model_multiobj import FugitiveInterception
 from visualization import plot_result
 
 from ptreeopt import PTreeOpt
@@ -60,7 +60,7 @@ units_start = sample(list(graph.nodes()), U)
 fugitive_start = sample(list(graph.nodes()), 1)[0]
 sensor_locations = sample(list(graph.nodes()), num_sensors)
 model = FugitiveInterception(T, U, R, graph=graph, units_start=units_start, fugitive_start=fugitive_start,
-                             num_sensors=num_sensors, sensor_locations=sensor_locations)
+                             num_sensors=num_sensors, sensor_locations=sensor_locations, multiobj=True)
 
 algorithm = PTreeOpt(model.f,
                      feature_bounds=[[0, T]] + [[0, 1]] * num_sensors,  # indicators
@@ -71,7 +71,8 @@ algorithm = PTreeOpt(model.f,
                      mu=20,
                      cx_prob=0.70,
                      population_size=100,
-                     max_depth=5
+                     max_depth=5,
+                     multiobj=True
                      )
 
 if __name__ == '__main__':
@@ -84,13 +85,13 @@ if __name__ == '__main__':
 
     pickle.dump(snapshots, open('results/snapshots.pkl', 'wb'))
 
-    P = snapshots['best_P'][0]  #best policy tree
+    P = snapshots['best_P'][0][0]  # best policy tree
     colors = {f"unit{u}_to_node{i}": 'lightgrey' for u in range(U) for i, _ in enumerate(graph.nodes)}
     graphviz_export(P, 'figs/optimaltree.png', colordict=colors)  # creates one SVG
 
     model = FugitiveInterception(T, U, R, graph=graph, units_start=units_start, fugitive_start=fugitive_start,
-                             num_sensors=num_sensors, sensor_locations=sensor_locations)
-    results_df, success = model.f(P, mode='simulation')
+                             num_sensors=num_sensors, sensor_locations=sensor_locations, multiobj=True)
+    results_df, success, t_at_intercept = model.f(P, mode='simulation')
     print('Simulation: interception percentage: ', (sum(success.values()) * 100)/R)
 
     plot_result(graph, pos, T, U, R, results_df, success, sensor_locations, labels)

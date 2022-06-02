@@ -21,7 +21,7 @@ def draw_edges(graph, results_df, step, T, U, route_to_vis):
         edges_fugitive.extend(tuple(edges_fugitive2))
 
         for u in range(U):
-            unit_route = results_df['unit'+str(u)]
+            unit_route = results_df[f'fugitive_route{route_to_vis}_unit{u}']
             edges_units.extend([(unit_route[step], unit_route[step-1])])
             edges_units.extend([(unit_route[step-1], unit_route[step])])
 
@@ -66,7 +66,7 @@ def draw_nodes(graph, results_df, sensor_locations, U, R, step, labels, pos, rou
                     sameplace_colormap.append('tab:orange')
         # unit routes final
         for u in range(U):
-            if node == results_df['unit'+str(u)].tolist()[step]:
+            if node == results_df[f'fugitive_route{route_to_vis}_unit{u}'].tolist()[step]:
                 if node_colormap[index] == 'lightgray':
                     node_colormap[index] = 'tab:blue'
                     labels_at_step[node] = 'unit'+str(u)
