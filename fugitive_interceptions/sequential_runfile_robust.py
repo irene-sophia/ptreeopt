@@ -10,7 +10,7 @@ import logging
 from random import sample
 import random
 
-from interception_model import FugitiveInterception
+from interception_model_robust import FugitiveInterception
 from visualization import plot_result
 
 from ptreeopt import PTreeOpt
@@ -59,7 +59,7 @@ graph, labels, pos = graph_func(N)
 units_start = sample(list(graph.nodes()), U)
 fugitive_start = sample(list(graph.nodes()), 1)[0]
 sensor_locations = sample(list(graph.nodes()), num_sensors)
-model = FugitiveInterception(T, U, graph=graph, units_start=units_start, fugitive_start=fugitive_start,
+model = FugitiveInterception(T, U, R, graph=graph, units_start=units_start, fugitive_start=fugitive_start,
                              num_sensors=num_sensors, sensor_locations=sensor_locations)
 
 algorithm = PTreeOpt(model.f,
@@ -88,11 +88,11 @@ if __name__ == '__main__':
     colors = {f"unit{u}_to_node{i}": 'lightgrey' for u in range(U) for i, _ in enumerate(graph.nodes)}
     graphviz_export(P, 'figs/optimaltree.png', colordict=colors)  # creates one SVG
 
-    model = FugitiveInterception(T, U, graph=graph, units_start=units_start, fugitive_start=fugitive_start,
+    model = FugitiveInterception(T, U, R, graph=graph, units_start=units_start, fugitive_start=fugitive_start,
                              num_sensors=num_sensors, sensor_locations=sensor_locations)
     results_df, success = model.f(P, mode='simulation')
-    print('Simulation: interception succeeded: ', success)
+    print('Simulation: interception percentage: ', (sum(success.values()) * 100)/R)
     print(results_df['policy'])
 
-    #plot_result(graph, pos, T, U, R, results_df, success, sensor_locations, labels)
+    plot_result(graph, pos, T, U, R, results_df, success, sensor_locations, labels)
 
