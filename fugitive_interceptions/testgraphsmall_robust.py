@@ -21,55 +21,42 @@ from ptreeopt.plotting import *
 #np.random.seed(112)
 
 
-def graph_func(N):
-    """
-    Generate manhattan graph
-
-    Parameters
-    ----------
-    N : int
-        width of graph.
-
-    Returns
-    -------
-    G : networkx graph
-        graph of size (N,N).
-    labels : dict
-        {pos: vertex number}.
-    pos : dict
-        {vertex:pos}.
-
-    """
-
-    G = nx.grid_2d_graph(N, N)
-    pos = dict((n, n) for n in G.nodes())
-    #labels = dict(((i, j), i * N + j) for i, j in G.nodes())  #
-    labels = {node: str(i) for i, node in enumerate(G.nodes())}
-
+def test_graph_func():
+    G = nx.Graph()
+    G.add_nodes_from([(0,1), (1,2), (2,2), (3,2), (1,0), (2,0), (3,0)])
+    edge_list = [(1,2), (2,3), (3,4), (4,5), (5,6), (1,7), (7,8), (8,9), (9,10), (10,11), (6,11)]
+    G.add_edges_from([((0,1),(1,2)), ((1,2),(2,2)), ((2,2),(3,2)),
+                            ((0,1),(1,0)), ((1,0),(2,0)), ((2,0),(3,0)), ((3,0), (3,2))])
+    pos_list = [(0,1), (1,2), (2,2), (3,2), (1,0), (2,0), (3,0)]
+    pos = {node: node for _, node in enumerate(G.nodes())}
+    labels = {node: i for i, node in enumerate(G.nodes())}
     return G, labels, pos
 
-N = 5
-T = 10
-U = 3
-R = 20
-num_sensors = 3
 
-graph, labels, pos = graph_func(N)
-units_start = sample(list(graph.nodes()), U)
-fugitive_start = sample(list(graph.nodes()), 1)[0]
-sensor_locations = sample(list(graph.nodes()), num_sensors)
+T = 4
+U = 1
+R = 10
+num_sensors = 1
+
+graph, labels, pos = test_graph_func()
+units_start = [(3, 2)]
+fugitive_start = (0, 1)
+sensor_locations = [(1, 2)]
+
+#nx.draw(graph, pos=pos, labels=labels)
+
 model = FugitiveInterception(T, U, R, graph=graph, units_start=units_start, fugitive_start=fugitive_start,
                              num_sensors=num_sensors, sensor_locations=sensor_locations)
 
 algorithm = PTreeOpt(model.f,
                      feature_bounds=[[0, T]] + [[0, 1]] * num_sensors,  # indicators
                      feature_names=['Minute'] + [f"sensor{s}" for s in range(num_sensors)],  # indicator names
-                     #discrete_features=['Minute'] + [f"sensor{s}" for s in range(num_sensors)],
+                     discrete_features=['Minute'] + [f"sensor{s}" for s in range(num_sensors)],
                      discrete_actions=True,
                      action_names=[f"unit{u}_to_node{i}" for u in range(U) for i, _ in enumerate(graph.nodes)],
-                     mu=40,  # 20
+                     mu=3,  # 20
                      cx_prob=0.70,
-                     population_size=100,
+                     population_size=10,        #100
                      max_depth=10  # 5
                      )
 
@@ -77,7 +64,7 @@ if __name__ == '__main__':
     logging.basicConfig(level=logging.INFO,
                         format='[%(processName)s/%(levelname)s:%(filename)s:%(funcName)s] %(message)s')
 
-    best_solution, best_score, snapshots = algorithm.run(max_nfe=10000,
+    best_solution, best_score, snapshots = algorithm.run(max_nfe=5000,
                                                          log_frequency=100,
                                                          snapshot_frequency=100)
 

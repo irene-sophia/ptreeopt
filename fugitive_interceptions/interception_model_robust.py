@@ -4,6 +4,7 @@ import networkx as nx
 import numpy as np
 import pandas as pd
 import random
+import math
 from random import sample
 
 
@@ -61,7 +62,7 @@ class FugitiveInterception():
         for r in range(R):
             sensor_detections = {}
             for sensor, location in enumerate(self.sensor_locations):
-                sensor_detections['sensor' + str(sensor)] = list(map(int, [x in [location] for x in fugitive_routes]))
+                sensor_detections['sensor' + str(sensor)] = list(map(int, [x in [location] for x in fugitive_routes[r]]))
 
             unit_route = {f'unit{u}': [self.units_start[u]] for u in range(U)}
             units_current = {f'unit{u}': self.units_start[u] for u in range(U)}
@@ -151,7 +152,7 @@ class FugitiveInterception():
                     interception_dict[f'unit{u}'] = [i for i, j in zip(unit_routes_final[f'route{r}'][f'unit{u}'], fugitive_routes) if i == j]
                 # return objective value
                 if any(len(value) for value in interception_dict.values()):
-                    interception_pct +=1
+                    interception_pct += 1
 
-            return (R-interception_pct)/R #minimize prob of interception
+            return (R-interception_pct)/R  # minimize prob of interception
 
