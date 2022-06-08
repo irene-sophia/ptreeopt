@@ -23,23 +23,33 @@ from ptreeopt.plotting import *
 
 def test_graph_func():
     G = nx.Graph()
-    G.add_nodes_from([(0,1), (1,2), (2,2), (3,2), (1,0), (2,0), (3,0)])
-    edge_list = [(1,2), (2,3), (3,4), (4,5), (5,6), (1,7), (7,8), (8,9), (9,10), (10,11), (6,11)]
-    G.add_edges_from([((0,1),(1,2)), ((1,2),(2,2)), ((2,2),(3,2)),
-                            ((0,1),(1,0)), ((1,0),(2,0)), ((2,0),(3,0)), ((3,0), (3,2))])
-    pos_list = [(0,1), (1,2), (2,2), (3,2), (1,0), (2,0), (3,0)]
+    G.add_nodes_from([(0,1), (1,2), (2,2), (3,2), (4,2), (1,0), (2,0), (3,0), (4,0), (5,1)])
+    G.add_edges_from([((0,1),(1,2)), ((1,2),(2,2)), ((2,2),(3,2)), ((3,2), (4,2)),
+                      ((0,1),(1,0)), ((1,0),(2,0)), ((2,0),(3,0)), ((3,0),(4,0)),
+                      ((4,2), (5,1)), ((4,0), (5,1))])
     pos = {node: node for _, node in enumerate(G.nodes())}
     labels = {node: i for i, node in enumerate(G.nodes())}
     return G, labels, pos
 
+#directed graph with 2 options for the unit: top or bottom of the parallel roads
+# def test_graph_func():
+#     G = nx.DiGraph()
+#     G.add_nodes_from([(0,1), (1,2), (2,2), (3,2), (1,0), (2,0), (3,0), (4,1)])
+#     G.add_edges_from([((0,1),(1,2)), ((1,2),(2,2)), ((2,2),(3,2)),
+#                       ((0,1),(1,0)), ((1,0),(2,0)), ((2,0),(3,0)),
+#                       ((4,1), (3,2)), ((4,1), (3,0))])
+#     pos = {node: node for _, node in enumerate(G.nodes())}
+#     labels = {node: i for i, node in enumerate(G.nodes())}
+#     return G, labels, pos
 
-T = 4
+
+T = 5
 U = 1
-R = 10
+R = 20
 num_sensors = 1
 
 graph, labels, pos = test_graph_func()
-units_start = [(3, 2)]
+units_start = [(5, 1)]
 fugitive_start = (0, 1)
 sensor_locations = [(1, 2)]
 
@@ -64,22 +74,22 @@ if __name__ == '__main__':
     logging.basicConfig(level=logging.INFO,
                         format='[%(processName)s/%(levelname)s:%(filename)s:%(funcName)s] %(message)s')
 
-    best_solution, best_score, snapshots = algorithm.run(max_nfe=5000,
+    best_solution, best_score, snapshots = algorithm.run(max_nfe=10000,
                                                          log_frequency=100,
                                                          snapshot_frequency=100)
 
     pickle.dump(snapshots, open('results/snapshots.pkl', 'wb'))
 
-    P = snapshots['best_P'][0]  #best policy tree
+    #P = snapshots['best_P'][-1]  # best policy tree
     colors = {f"unit{u}_to_node{i}": 'lightgrey' for u in range(U) for i, _ in enumerate(graph.nodes)}
-    graphviz_export(P, 'figs/optimaltree.png', colordict=colors)  # creates one SVG
+    graphviz_export(best_solution, 'figs/optimaltree.png', colordict=colors)  # creates one PNG
 
     model = FugitiveInterception(T, U, R, graph=graph, units_start=units_start, fugitive_start=fugitive_start,
                              num_sensors=num_sensors, sensor_locations=sensor_locations)
 
-    results_df, success = model.f(P, mode='simulation')
+    results_df, success = model.f(best_solution, mode='simulation')
     print('Simulation: interception percentage: ', (sum(success.values()) * 100)/R)
-    print(results_df['policy'])
+    #print(results_df['policy'])
 
     plot_result(graph, pos, T, U, R, results_df, success, sensor_locations, labels)
 

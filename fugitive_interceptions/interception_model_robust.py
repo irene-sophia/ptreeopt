@@ -80,7 +80,9 @@ class FugitiveInterception():
 
             for t in range(1, T):
                 # determine action from policy tree P based on indicator states
-                action, rules = P.evaluate(states=[t] + [sensor_detections['sensor' + str(s)][t] for s in range(
+                #action, rules = P.evaluate(states=[t] + [sensor_detections['sensor' + str(s)][t])) for s in range(
+                #        self.num_sensors)])
+                action, rules = P.evaluate(states=[t] + [int(any(sensor_detections['sensor' + str(s)][:t])) for s in range(
                     self.num_sensors)])  # states = list of current values of" ['Minute', 'SensorA']
 
                 # evaluate state transition function, given the action from the tree
@@ -97,12 +99,13 @@ class FugitiveInterception():
                 unit_affected, _, target_node = action.split('_')
                 try:
                     if units_plan[unit_affected][-1] != target_node:
-                        units_plan[unit_affected] = nx.shortest_path(G=self.graph, source=units_current[unit_affected],
-                                                                     target=nodes_dict[target_node])
+                        if nx.has_path(G=self.graph, source=units_current[unit_affected], target=nodes_dict[target_node]):
+                            units_plan[unit_affected] = nx.shortest_path(G=self.graph, source=units_current[unit_affected], target=nodes_dict[target_node])
                         del units_plan[unit_affected][0]  # is source node (= current node)
                 except IndexError:
-                    units_plan[unit_affected] = nx.shortest_path(G=self.graph, source=units_current[unit_affected],
-                                                                 target=nodes_dict[target_node])
+                    if nx.has_path(G=self.graph, source=units_current[unit_affected], target=nodes_dict[target_node]):
+                        units_plan[unit_affected] = nx.shortest_path(G=self.graph, source=units_current[unit_affected],
+                                                                     target=nodes_dict[target_node])
                     if len(units_plan) > 1:
                         del units_plan[unit_affected][0]  # is source node (= current node), but only if source =/= target
 
@@ -149,10 +152,9 @@ class FugitiveInterception():
             for r in range(R):
                 interception_dict = {}
                 for u in range(U):
-                    interception_dict[f'unit{u}'] = [i for i, j in zip(unit_routes_final[f'route{r}'][f'unit{u}'], fugitive_routes) if i == j]
+                    interception_dict[f'unit{u}'] = [i for i, j in zip(unit_routes_final[f'route{r}'][f'unit{u}'], fugitive_routes[r]) if i == j]
                 # return objective value
                 if any(len(value) for value in interception_dict.values()):
                     interception_pct += 1
-
             return (R-interception_pct)/R  # minimize prob of interception
 

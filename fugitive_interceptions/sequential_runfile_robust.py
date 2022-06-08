@@ -62,7 +62,7 @@ model = FugitiveInterception(T, U, R, graph=graph, units_start=units_start, fugi
                              num_sensors=num_sensors, sensor_locations=sensor_locations)
 
 algorithm = PTreeOpt(model.f,
-                     feature_bounds=[[0, T]] + [[0, 1]] * num_sensors,  # indicators
+                     feature_bounds=[[0, T]] + [[0, 1.5]] * num_sensors,  # indicators
                      feature_names=['Minute'] + [f"sensor{s}" for s in range(num_sensors)],  # indicator names
                      #discrete_features=['Minute'] + [f"sensor{s}" for s in range(num_sensors)],
                      discrete_actions=True,
