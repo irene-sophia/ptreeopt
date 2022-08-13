@@ -48,7 +48,7 @@ def graph_func(N):
 
     return G, labels, pos
 
-N = 5
+N = 10
 T = 10
 U = 3
 R = 20
@@ -64,7 +64,7 @@ model = FugitiveInterception(T, U, R, graph=graph, units_start=units_start, fugi
 algorithm = PTreeOpt(model.f,
                      feature_bounds=[[0, T]] + [[0, 1.5]] * num_sensors,  # indicators
                      feature_names=['Minute'] + [f"sensor{s}" for s in range(num_sensors)],  # indicator names
-                     #discrete_features=['Minute'] + [f"sensor{s}" for s in range(num_sensors)],
+                     discrete_features=['Minute'] + [f"sensor{s}" for s in range(num_sensors)],
                      discrete_actions=True,
                      action_names=[f"unit{u}_to_node{i}" for u in range(U) for i, _ in enumerate(graph.nodes)],
                      mu=40,  # 20
@@ -83,14 +83,14 @@ if __name__ == '__main__':
 
     pickle.dump(snapshots, open('results/snapshots.pkl', 'wb'))
 
-    P = snapshots['best_P'][0]  #best policy tree
+    # P = snapshots['best_P'][-1]  #best policy tree
     colors = {f"unit{u}_to_node{i}": 'lightgrey' for u in range(U) for i, _ in enumerate(graph.nodes)}
-    graphviz_export(P, 'figs/optimaltree.png', colordict=colors)  # creates one SVG
+    graphviz_export(best_solution, 'figs/optimaltree.png', colordict=colors)  # creates one SVG
 
     model = FugitiveInterception(T, U, R, graph=graph, units_start=units_start, fugitive_start=fugitive_start,
                              num_sensors=num_sensors, sensor_locations=sensor_locations)
 
-    results_df, success = model.f(P, mode='simulation')
+    results_df, success = model.f(best_solution, mode='simulation')
     print('Simulation: interception percentage: ', (sum(success.values()) * 100)/R)
     print(results_df['policy'])
 

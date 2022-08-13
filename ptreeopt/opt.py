@@ -221,12 +221,10 @@ class PTreeOpt(object):
                     seconds=time.time() - start_time).seconds
 
                 if not self.multiobj:
-                    logger.info(self.process_log_message.format(nfe, 
-                                    elapsed, self.best_f, self.best_p))
+                    logger.info(self.process_log_message.format(nfe, elapsed, self.best_f, self.best_p))
                 else:
-                    # TODO:: to be tested
-                    logger.info('# nfe = %d\n%s\n%s' % (nfe, self.best_f,
-                                                    self.best_f.shape))
+                    if len(self.best_f) > 0:
+                        logger.info(self.process_log_message.format(nfe, elapsed, self.best_f, *self.best_p))
                     
             if nfe >= last_snapshot + snapshot_frequency:
                 last_snapshot = nfe
@@ -272,6 +270,11 @@ class PTreeOpt(object):
 
         T = PTree(L, self.feature_names, self.discrete_features)
         T.prune()
+
+        # test the theoretically optimal tree
+        #O = [[0, 2.01], ['unit0_to_node9'], [1, 0.99], ['unit0_to_node8'], ['unit0_to_node4']]  # discrete features
+        #O = [[1, 0.01], [0, 0.01], ['unit0_to_node9'], [0, 1.01], ['unit0_to_node9'], ['unit0_to_node8'], ['unit0_to_node4']]
+        #OT = PTree(O, self.feature_names, self.discrete_features)
         return T
 
     def select_truncation(self, obj):

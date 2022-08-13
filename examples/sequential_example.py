@@ -35,3 +35,4 @@ if __name__ == '__main__':
     best_solution, best_score, snapshots = algorithm.run(max_nfe=1000, 
                                                      log_frequency=100,
                                                      snapshot_frequency=100)
+

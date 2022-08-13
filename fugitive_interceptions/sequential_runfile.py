@@ -84,13 +84,13 @@ if __name__ == '__main__':
 
     pickle.dump(snapshots, open('results/snapshots.pkl', 'wb'))
 
-    P = snapshots['best_P'][0]  #best policy tree
+    # P = snapshots['best_P'][-1]  #best policy tree
     colors = {f"unit{u}_to_node{i}": 'lightgrey' for u in range(U) for i, _ in enumerate(graph.nodes)}
-    graphviz_export(P, 'figs/optimaltree.png', colordict=colors)  # creates one SVG
+    graphviz_export(best_solution, 'figs/optimaltree.png', colordict=colors)  # creates one SVG
 
     model = FugitiveInterception(T, U, graph=graph, units_start=units_start, fugitive_start=fugitive_start,
                              num_sensors=num_sensors, sensor_locations=sensor_locations)
-    results_df, success = model.f(P, mode='simulation')
+    results_df, success = model.f(best_solution, mode='simulation')
     print('Simulation: interception succeeded: ', success)
     print(results_df['policy'])
 

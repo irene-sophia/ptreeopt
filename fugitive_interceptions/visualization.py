@@ -1,6 +1,8 @@
 import networkx as nx
 import matplotlib.pyplot as plt
 import matplotlib
+from matplotlib.patches import Patch
+from matplotlib.lines import Line2D
 import imageio
 import math
 import glob
@@ -83,7 +85,7 @@ def plot_result(graph, pos, T, U, R, results_df, success, sensor_locations, labe
     for route_to_vis in range(R):
         for step in range(T):
 
-            fig, ax = plt.subplots(nrows=2, ncols=1, figsize=(15,15))  # , gridspec_kw={'height_ratios': [1, 0.6]}
+            fig, ax = plt.subplots(nrows=2, ncols=1)  #  , figsize=(15,15)   # , gridspec_kw={'height_ratios': [1, 0.6]}
             node_colormap, labels_at_step, sameplace_colormap, sameplace_graph, sameplace_pos = draw_nodes(graph, results_df, sensor_locations, U, R, step, labels, pos, route_to_vis)
             edge_colormap, edge_weightmap = draw_edges(graph, results_df, step, T, U, route_to_vis)
 
@@ -106,10 +108,21 @@ def plot_result(graph, pos, T, U, R, results_df, success, sensor_locations, labe
             #ax[0] = plt.gca()
             ax[0].set_aspect('equal')
             ax[0].set_facecolor('white')
-            #plt.legend(loc=1)
-            ax[0].text(-0.9, 4, 't='+str(step), bbox=dict(facecolor='lightgray', alpha=0.5))
-            ax[0].text(-1.1, 3, 'route=' + str(route_to_vis), bbox=dict(facecolor='lightgray', alpha=0.5))
-            ax[0].text(-1.7, 2, 'intercepted=' + str(success[f'route{route_to_vis}']), bbox=dict(facecolor='lightgray', alpha=0.5))
+
+            # legend
+
+            legend_elements = [Line2D([0], [0], marker='o', color='w', label='police unit',
+                                      markerfacecolor='tab:blue', markersize=8),
+                               Line2D([0], [0], marker='o', color='w', label='fugitive',
+                                      markerfacecolor='tab:orange', markersize=8),
+                               Line2D([0], [0], marker='o', color='w', label='sensor',
+                                      markerfacecolor='tab:red', markersize=8)]
+
+            #fig.legend(handles=legend_elements, loc=7)
+            plt.legend(handles=legend_elements, loc='center left', bbox_to_anchor=(1, 1.6))
+            #ax[0].text(-0.9, 4, 't='+str(step), bbox=dict(facecolor='lightgray', alpha=0.5))
+            #ax[0].text(-1.1, 3, 'route=' + str(route_to_vis), bbox=dict(facecolor='lightgray', alpha=0.5))
+            #ax[0].text(-1.7, 2, 'intercepted=' + str(success[f'route{route_to_vis}']), bbox=dict(facecolor='lightgray', alpha=0.5))
 
             optimal_tree = plt.imread('figs/optimaltree.png')
             ax[1].imshow(optimal_tree)

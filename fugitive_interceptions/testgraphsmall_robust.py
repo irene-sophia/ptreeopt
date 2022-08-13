@@ -74,7 +74,7 @@ if __name__ == '__main__':
     logging.basicConfig(level=logging.INFO,
                         format='[%(processName)s/%(levelname)s:%(filename)s:%(funcName)s] %(message)s')
 
-    best_solution, best_score, snapshots = algorithm.run(max_nfe=10000,
+    best_solution, best_score, snapshots = algorithm.run(max_nfe=1000,
                                                          log_frequency=100,
                                                          snapshot_frequency=100)
 
