@@ -1,6 +1,6 @@
 import sys
 
-sys.path.append('..')
+sys.path.append('../..')
 
 # import pygraphviz as pgv
 import numpy as np
@@ -10,8 +10,8 @@ import logging
 from random import sample
 import random
 
-from interception_model_robust import FugitiveInterception
-from visualization import plot_result
+from fugitive_interceptions.interception_model_robust import FugitiveInterception
+from fugitive_interceptions.visualization import plot_result
 
 from ptreeopt import PTreeOpt
 from ptreeopt.plotting import *
@@ -19,7 +19,6 @@ from ptreeopt.plotting import *
 
 # Example to run optimization and save results
 #np.random.seed(112)
-
 
 def test_graph_func():
     G = nx.Graph()
@@ -78,11 +77,11 @@ if __name__ == '__main__':
                                                          log_frequency=100,
                                                          snapshot_frequency=100)
 
-    pickle.dump(snapshots, open('results/snapshots.pkl', 'wb'))
+    pickle.dump(snapshots, open('../results/snapshots.pkl', 'wb'))
 
     #P = snapshots['best_P'][-1]  # best policy tree
     colors = {f"unit{u}_to_node{i}": 'lightgrey' for u in range(U) for i, _ in enumerate(graph.nodes)}
-    graphviz_export(best_solution, 'figs/optimaltree.png', colordict=colors)  # creates one PNG
+    graphviz_export(best_solution, '../figs/optimaltree.png', colordict=colors)  # creates one PNG
 
     model = FugitiveInterception(T, U, R, graph=graph, units_start=units_start, fugitive_start=fugitive_start,
                              num_sensors=num_sensors, sensor_locations=sensor_locations)

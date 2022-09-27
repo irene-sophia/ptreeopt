@@ -4,8 +4,12 @@ import networkx as nx
 import numpy as np
 import pandas as pd
 import random
+import pickle
 import math
 from random import sample
+
+import logging
+logger = logging.getLogger(__name__)
 
 
 class FugitiveInterception():
@@ -18,6 +22,19 @@ class FugitiveInterception():
         self.fugitive_start = fugitive_start
         self.num_sensors = num_sensors
         self.sensor_locations = sensor_locations
+
+        logger.info("sampled police starts: {}".format(units_start))
+        logger.info("sampled fugitive start: {}".format(fugitive_start))
+
+
+
+        # simulate fugitive escape routes
+        fugitive_routes_db = []
+        for r in range(R*10):
+            route = self.escape_route()
+            fugitive_routes_db.append(route)
+
+        self.fugitive_routes_db = fugitive_routes_db
 
     def escape_route(self):
         walk = []
@@ -33,8 +50,10 @@ class FugitiveInterception():
 
             else:
                 # exclude previous node for 'normal' walk
-                if previous_node in list_neighbor:
-                    list_neighbor.remove(previous_node)
+                # don't do this for dead ends
+                if len(list_neighbor) > 1:
+                    if previous_node in list_neighbor:
+                        list_neighbor.remove(previous_node)
 
                 # save previous node
                 previous_node = node
@@ -51,13 +70,10 @@ class FugitiveInterception():
         R = self.R
 
         unit_routes_final = {f'route{r}': {f'unit{u}': [self.units_start[u]] for u in range(U)} for r in range(R)}
+        unit_targetnodes_final = {f'route{r}': {f'unit{u}': [self.units_start[u]] for u in range(U)} for r in range(R)}
         policies = [None]
 
-        # simulate fugitive escape routes
-        fugitive_routes = []
-        for r in range(R):
-            route = self.escape_route()
-            fugitive_routes.append(route)
+        fugitive_routes = random.sample(self.fugitive_routes_db, R)  # sample without replacement
 
         for r in range(R):
             sensor_detections = {}
@@ -71,6 +87,7 @@ class FugitiveInterception():
 
             #units_plan initially: stay where they started
             units_plan = {f'unit{u}': [self.units_start[u]] for u in range(U)}
+            units_targetnodes = {f'unit{u}': [self.units_start[u]] for u in range(U)}
 
             for u in range(U):
                 if len(units_plan[f'unit{u}']) > 1:
@@ -80,12 +97,9 @@ class FugitiveInterception():
 
             for t in range(1, T):
                 # determine action from policy tree P based on indicator states
-                #action, rules = P.evaluate(states=[t] + [sensor_detections['sensor' + str(s)][t])) for s in range(
-                #        self.num_sensors)])
-                action, rules = P.evaluate(states=[t] + [int(any(sensor_detections['sensor' + str(s)][:t])) for s in range(
-                    self.num_sensors)])  # states = list of current values of" ['Minute', 'SensorA']
-                        # TODO: remove `any()': just consider sensor detections if happened at t=t./
-                        #  Expected to result in more complex trees, that include time constraints
+                action, rules = P.evaluate(states=[t] + [sensor_detections['sensor' + str(s)][t] for s in range(self.num_sensors)])
+                #action, rules = P.evaluate(states=[t] + [int(any(sensor_detections['sensor' + str(s)][:t])) for s in range(
+                #    self.num_sensors)])  # states = list of current values of" ['Minute', 'SensorA']
 
                 # evaluate state transition function, given the action from the tree
                 # the state transition function gives the next node for each of the units, given the current node and the action
@@ -99,6 +113,7 @@ class FugitiveInterception():
 
                 # 1) update planned paths
                 unit_affected, _, target_node = action.split('_')
+                units_targetnodes[unit_affected] = nodes_dict[target_node]
                 try:
                     if units_plan[unit_affected][-1] != target_node:
                         if nx.has_path(G=self.graph, source=units_current[unit_affected], target=nodes_dict[target_node]):
@@ -108,7 +123,7 @@ class FugitiveInterception():
                     if nx.has_path(G=self.graph, source=units_current[unit_affected], target=nodes_dict[target_node]):
                         units_plan[unit_affected] = nx.shortest_path(G=self.graph, source=units_current[unit_affected],
                                                                      target=nodes_dict[target_node])
-                    if len(units_plan) > 1:
+                    if len(units_plan[unit_affected]) > 1:
                         del units_plan[unit_affected][0]  # is source node (= current node), but only if source =/= target
 
                 # 2) update current position
@@ -129,6 +144,7 @@ class FugitiveInterception():
 
             for u in range(U):
                 unit_routes_final[f'route{r}'][f'unit{u}'] = unit_route[f'unit{u}']
+                unit_targetnodes_final[f'route{r}'][f'unit{u}'] = units_targetnodes[f'unit{u}']
 
         df = pd.DataFrame()
         if mode == 'simulation':
@@ -154,9 +170,10 @@ class FugitiveInterception():
             for r in range(R):
                 interception_dict = {}
                 for u in range(U):
-                    interception_dict[f'unit{u}'] = [i for i, j in zip(unit_routes_final[f'route{r}'][f'unit{u}'], fugitive_routes[r]) if i == j]
+                    interception_dict[f'unit{u}'] = [i for i, j in zip(unit_routes_final[f'route{r}'][f'unit{u}'], fugitive_routes[r]) if (i == j)]
                 # return objective value
                 if any(len(value) for value in interception_dict.values()):
                     interception_pct += 1
             return (R-interception_pct)/R  # minimize prob of interception
+            #return -(interception_pct/R)
 

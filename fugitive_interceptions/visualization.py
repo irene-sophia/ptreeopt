@@ -53,8 +53,9 @@ def draw_nodes(graph, results_df, sensor_locations, U, R, step, labels, pos, rou
     for index, node in enumerate(graph.nodes()):
         # sensors
         if node in sensor_locations:
-            node_colormap[index] = 'tab:red'
-            labels_at_step[node] = 'sensor'+str(sensor_locations.index(node))
+            node_colormap[index] = 'lightgray'
+            #node_colormap[index] = 'tab:red'
+            #labels_at_step[node] = 'sensor'+str(sensor_locations.index(node))
         # fugitive route
         if node == results_df[f'fugitive_route{route_to_vis}'].tolist()[step]:
             if node_colormap[index] == 'tab:orange':
@@ -71,7 +72,7 @@ def draw_nodes(graph, results_df, sensor_locations, U, R, step, labels, pos, rou
             if node == results_df[f'fugitive_route{route_to_vis}_unit{u}'].tolist()[step]:
                 if node_colormap[index] == 'lightgray':
                     node_colormap[index] = 'tab:blue'
-                    labels_at_step[node] = 'unit'+str(u)
+                    #labels_at_step[node] = 'unit'+str(u)
                 else:
                     sameplace_graph.add_node(node)
                     sameplace_pos[node] = pos[node]
@@ -85,12 +86,12 @@ def plot_result(graph, pos, T, U, R, results_df, success, sensor_locations, labe
     for route_to_vis in range(R):
         for step in range(T):
 
-            fig, ax = plt.subplots(nrows=2, ncols=1)  #  , figsize=(15,15)   # , gridspec_kw={'height_ratios': [1, 0.6]}
+            fig, ax = plt.subplots(nrows=2, ncols=1, figsize=(5,5)) #, gridspec_kw={'height_ratios': [1, 0.6]})
             node_colormap, labels_at_step, sameplace_colormap, sameplace_graph, sameplace_pos = draw_nodes(graph, results_df, sensor_locations, U, R, step, labels, pos, route_to_vis)
             edge_colormap, edge_weightmap = draw_edges(graph, results_df, step, T, U, route_to_vis)
 
             nx.draw_networkx_nodes(G=graph, pos=pos,
-                                   node_color=node_colormap, alpha=0.9,
+                                   node_color=node_colormap, alpha=0.9, node_size=200,
                                    node_shape=matplotlib.markers.MarkerStyle(marker='o', fillstyle='full'),
                                    ax=ax[0])
 
@@ -98,7 +99,7 @@ def plot_result(graph, pos, T, U, R, results_df, success, sensor_locations, labe
 
             if len(sameplace_pos) > 0:
                 nx.draw_networkx_nodes(G=sameplace_graph, pos=sameplace_pos,
-                                       node_color=sameplace_colormap, alpha=0.9,
+                                       node_color=sameplace_colormap, alpha=0.9, node_size=200,
                                        node_shape=matplotlib.markers.MarkerStyle(marker='o', fillstyle='bottom'),
                                        ax=ax[0])
 
@@ -111,9 +112,9 @@ def plot_result(graph, pos, T, U, R, results_df, success, sensor_locations, labe
 
             # legend
 
-            legend_elements = [Line2D([0], [0], marker='o', color='w', label='police unit',
+            legend_elements = [Line2D([0], [0], marker='o', color='w', label='pursuer',
                                       markerfacecolor='tab:blue', markersize=8),
-                               Line2D([0], [0], marker='o', color='w', label='fugitive',
+                               Line2D([0], [0], marker='o', color='w', label='evader',
                                       markerfacecolor='tab:orange', markersize=8),
                                Line2D([0], [0], marker='o', color='w', label='sensor',
                                       markerfacecolor='tab:red', markersize=8)]
