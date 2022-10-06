@@ -58,10 +58,10 @@ num_sensors = 3
 
 
 if __name__ == '__main__':
-    num_repetitions = 1
-    num_seeds = 1
+    num_repetitions = 10
+    num_seeds = 10
 
-    for rep in range(9, num_repetitions):
+    for rep in range(num_repetitions):
         graph, labels, pos = graph_func(N=N)
         units_start = sample(list(graph.nodes()), U)
         fugitive_start = sample(list(graph.nodes()), 1)[0]
