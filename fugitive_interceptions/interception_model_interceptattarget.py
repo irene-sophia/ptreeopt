@@ -13,7 +13,7 @@ logger = logging.getLogger(__name__)
 
 
 class FugitiveInterception():
-    def __init__(self, T, U, R, graph, units_start, fugitive_start, num_sensors, sensor_locations, fugitive_routes_db, multiobj=False):
+    def __init__(self, T, U, R, graph, units_start, fugitive_start, num_sensors, sensor_locations, fugitive_routes_db, multiobj=False, seed=1):
         self.T = T
         self.U = U
         self.R = R
@@ -23,6 +23,10 @@ class FugitiveInterception():
         self.num_sensors = num_sensors
         self.sensor_locations = sensor_locations
         self.multiobj = multiobj
+        self.seed = seed
+
+        np.random.seed(self.seed)
+        random.seed(self.seed)
 
         logger.info("sampled police starts: {}".format(units_start))
         logger.info("sampled fugitive start: {}".format(fugitive_start))

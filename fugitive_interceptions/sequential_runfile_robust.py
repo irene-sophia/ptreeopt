@@ -19,13 +19,13 @@ from ptreeopt import PTreeOpt
 from ptreeopt.plotting import *
 
 
-def escape_route(self):
+def escape_route(graph, fugitive_start, T):
     walk = []
-    node = self.fugitive_start
+    node = fugitive_start
     walk.append(node)
 
-    for i in range(self.T - 1):
-        list_neighbor = list(self.graph.neighbors(node))
+    for i in range(T - 1):
+        list_neighbor = list(graph.neighbors(node))
 
         if i == 0:
             previous_node = node
@@ -61,8 +61,8 @@ if __name__ == '__main__':
     num_repetitions = 10
     num_seeds = 10
 
-    for rep in range(num_repetitions):
-        graph, labels, pos = graph_func(N=N)
+    for rep in range(7, num_repetitions):
+        graph, labels, pos = graph_func(N=N)  # change labels to pointers
         units_start = sample(list(graph.nodes()), U)
         fugitive_start = sample(list(graph.nodes()), 1)[0]
         sensor_locations = sample(list(graph.nodes()), num_sensors)
@@ -70,19 +70,21 @@ if __name__ == '__main__':
         # simulate fugitive escape routes
         fugitive_routes_db = []
         for r in range(R):
-            route = escape_route()
+            route = escape_route(graph, fugitive_start, T)
             fugitive_routes_db.append(route)
-
 
         for seed_rep in range(num_seeds):
             # save experiment parameters
+            random.seed(seed_rep)
+
             pickle.dump(sensor_locations, open('results/sensors_rep{}_seed{}.pkl'.format(rep, seed_rep), 'wb'))
             pickle.dump(units_start, open('results/start_units_rep{}_seed{}.pkl'.format(rep, seed_rep), 'wb'))
             pickle.dump(fugitive_start, open('results/start_fug_rep{}_seed{}.pkl'.format(rep, seed_rep), 'wb'))
+            pickle.dump(fugitive_routes_db, open('results/routes_fug_rep{}_seed{}.pkl'.format(rep, seed_rep), 'wb'))
 
             model = FugitiveInterception(T, U, R, graph=graph, units_start=units_start, fugitive_start=fugitive_start,
                                          fugitive_routes_db=fugitive_routes_db,
-                                         num_sensors=num_sensors, sensor_locations=sensor_locations)
+                                         num_sensors=num_sensors, sensor_locations=sensor_locations, seed=seed_rep)
 
             algorithm = PTreeOpt(model.f,
                                  feature_bounds=[[0, T]] + [[0.5, 1.5]] * num_sensors,  # indicators
@@ -119,3 +121,5 @@ if __name__ == '__main__':
             # print(results_df['policy'])
 
             # plot_result(graph, pos, T, U, R, results_df, success, sensor_locations, labels)
+
+            # TODO: random.seed

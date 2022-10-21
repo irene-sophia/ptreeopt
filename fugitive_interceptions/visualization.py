@@ -62,7 +62,7 @@ def draw_nodes(graph, results_df, sensor_locations, U, R, step, labels, pos, rou
                 node_colormap[index] = 'tab:orange'
             elif node_colormap[index] == 'lightgray':
                 node_colormap[index] = 'tab:orange'
-            else:
+            else:  # blue (unit also at this node)
                 sameplace_graph.add_node(node)
                 sameplace_pos[node] = pos[node]
                 if len(sameplace_graph.nodes) > len(sameplace_colormap):  # for if 3 at the same place
