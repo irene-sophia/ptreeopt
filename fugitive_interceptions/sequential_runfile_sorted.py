@@ -67,12 +67,7 @@ if __name__ == '__main__':
         fugitive_start = pd.read_pickle(r'results/start_fug_rep{}_seed0.pkl'.format(rep))
         units_start = pd.read_pickle(r'results/start_units_rep{}_seed0.pkl'.format(rep))
         sensor_locations = pd.read_pickle(r'results/sensors_rep{}_seed0.pkl'.format(rep))
-
-        # simulate fugitive escape routes
-        fugitive_routes_db = []
-        for r in range(R):
-            route = escape_route(graph, fugitive_start, T)
-            fugitive_routes_db.append(route)
+        fugitive_routes_db = pd.read_pickle(r'results/routes_fug_rep{}_seed0.pkl'.format(rep))
 
         for seed_rep in range(num_seeds):
             # save experiment parameters
@@ -117,7 +112,7 @@ if __name__ == '__main__':
             # model = FugitiveInterception(T, U, R, graph=graph, units_start=units_start, fugitive_start=fugitive_start,
             #                          num_sensors=num_sensors, sensor_locations=sensor_locations)
 
-            print('finished seed rep ', seed_rep+1, 'of repetition ', rep+1, '(experiment number ',
+            print('finished seed ', seed_rep+1, 'of repetition ', rep+1, '(experiment number ',
                   (rep*num_seeds)+seed_rep+1, 'of ', (num_seeds*num_repetitions), ').')
             # results_df, success = model.f(best_solution, mode='simulation')  # re-initializes! only use for visuals
             # print('Simulation: interception percentage: ', (sum(success.values()) * 100)/R)
