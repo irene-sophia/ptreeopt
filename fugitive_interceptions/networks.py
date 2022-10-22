@@ -27,6 +27,10 @@ def manhattan_graph(**kwargs):
     #labels = dict(((i, j), i * N + j) for i, j in G.nodes())  #
     labels = {node: str(i) for i, node in enumerate(G.nodes())}
 
+    # set travel time (unidistant)
+    travel_time = 1
+    nx.set_edge_attributes(G, travel_time, "travel_time")
+
     return G, labels, pos
 
 
