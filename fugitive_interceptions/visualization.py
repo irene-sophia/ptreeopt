@@ -53,8 +53,7 @@ def draw_nodes(graph, results_df, sensor_locations, U, R, step, labels, pos, rou
     for index, node in enumerate(graph.nodes()):
         # sensors
         if node in sensor_locations:
-            node_colormap[index] = 'lightgray'
-            #node_colormap[index] = 'tab:red'
+            node_colormap[index] = '#4caf50'
             #labels_at_step[node] = 'sensor'+str(sensor_locations.index(node))
         # fugitive route
         if node == results_df[f'fugitive_route{route_to_vis}'].tolist()[step]:
@@ -117,7 +116,7 @@ def plot_result(graph, pos, T, U, R, results_df, success, sensor_locations, labe
                                Line2D([0], [0], marker='o', color='w', label='evader',
                                       markerfacecolor='tab:orange', markersize=8),
                                Line2D([0], [0], marker='o', color='w', label='sensor',
-                                      markerfacecolor='tab:red', markersize=8)]
+                                      markerfacecolor='#4caf50', markersize=8)]
 
             #fig.legend(handles=legend_elements, loc=7)
             plt.legend(handles=legend_elements, loc='center left', bbox_to_anchor=(1, 1.6))

@@ -73,8 +73,6 @@ if __name__ == '__main__':
             # save experiment parameters
             random.seed(seed_rep)
 
-
-
             pickle.dump(sensor_locations, open('results/sorted/sensors_rep{}_seed{}.pkl'.format(rep, seed_rep), 'wb'))
             pickle.dump(units_start, open('results/sorted/start_units_rep{}_seed{}.pkl'.format(rep, seed_rep), 'wb'))
             pickle.dump(fugitive_start, open('results/sorted/start_fug_rep{}_seed{}.pkl'.format(rep, seed_rep), 'wb'))

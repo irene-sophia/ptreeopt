@@ -30,7 +30,7 @@ def unit_nodes(start_police, graph, run_length, U):
 def sort_and_filter_nodes(graph, start_fugitive, route_fugitive, unit_nodes, U):
     """
     Sorts the nodes of a graph on distance to start_fugitive,
-    filters the nodes on reachibility by the fugitive,
+    filters the nodes on reachability by the fugitive,
     and returns the updated labels
     """
 
@@ -105,22 +105,32 @@ if __name__ == '__main__':
     num_repetitions = 10
     num_seeds = 10
 
-    for rep in range(num_repetitions):
+    for rep in [7]:
         graph, labels, pos = graph_func(N=N)  # change labels to pointers
+
         # open pickles from prev experiment to guarantee same starting configuration
         fugitive_start = pd.read_pickle(r'results/start_fug_rep{}_seed0.pkl'.format(rep))
         units_start = pd.read_pickle(r'results/start_units_rep{}_seed0.pkl'.format(rep))
         sensor_locations = pd.read_pickle(r'results/sensors_rep{}_seed0.pkl'.format(rep))
         fugitive_routes_db = pd.read_pickle(r'results/routes_fug_rep{}_seed0.pkl'.format(rep))
+        #fugitive_routes_db = pd.read_pickle(r'results/routes_fug_100routes_rep{}_seed0.pkl'.format(rep))
 
-        unit_nodes = unit_nodes(units_start, graph, T, U)
-        nodesdict_perunit_sorted, nodesdict_perunit_inv_sorted, actions = sort_and_filter_nodes(graph, fugitive_start, fugitive_routes_db, unit_nodes, U)
+        # simulate fugitive escape routes (if changing number of routes)
+        # fugitive_routes_db = []
+        # for r in range(R):
+        #     route = escape_route(graph, fugitive_start, T)
+        #     fugitive_routes_db.append(route)
+        # pickle.dump(fugitive_routes_db, open('results/routes_fug_{}routes_rep{}_seed0.pkl'.format(R, rep), 'wb'))
 
-        for seed_rep in range(num_seeds):
+        unit_nodes_data = unit_nodes(units_start, graph, T, U)
+        nodesdict_perunit_sorted, nodesdict_perunit_inv_sorted, actions = sort_and_filter_nodes(graph, fugitive_start, fugitive_routes_db, unit_nodes_data, U)
+
+        print('number of actions, rep ', rep, ': ', len(actions))
+
+        for seed_rep in range(10):
             # save experiment parameters
             random.seed(seed_rep)
-
-
+            np.random.seed(seed_rep)
 
             pickle.dump(sensor_locations, open('results/sorted_filtered/sensors_rep{}_seed{}.pkl'.format(rep, seed_rep), 'wb'))
             pickle.dump(units_start, open('results/sorted_filtered/start_units_rep{}_seed{}.pkl'.format(rep, seed_rep), 'wb'))
@@ -168,5 +178,3 @@ if __name__ == '__main__':
             # print(results_df['policy'])
 
             # plot_result(graph, pos, T, U, R, results_df, success, sensor_locations, labels)
-
-            # TODO: random.seed

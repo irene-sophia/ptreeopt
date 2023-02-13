@@ -1,8 +1,9 @@
 *.pyc
 .DS_Store
-graphviz/
-figs/
-
+/graphviz/
+/fugitive_interceptions/figs/
+/fugitive_interceptions/results/
+/venv/
 
 #################
 ## Eclipse
