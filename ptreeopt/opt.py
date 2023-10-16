@@ -9,7 +9,7 @@ import time
 import numpy as np
 
 from .tree import PTree
-from ptreeopt.executors import SequentialExecutor
+from ptreeopt.ptreeopt.executors import SequentialExecutor
 
 logger = logging.getLogger(__name__)
 

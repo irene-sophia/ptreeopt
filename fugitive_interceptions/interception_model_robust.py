@@ -175,5 +175,5 @@ class FugitiveInterception():
                 if any(len(value) for value in interception_dict.values()):
                     interception_pct += 1
             return (R-interception_pct)/R  # minimize prob of interception
-            #return -(interception_pct/R)
+
 
