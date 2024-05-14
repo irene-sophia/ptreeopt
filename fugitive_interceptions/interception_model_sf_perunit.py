@@ -68,7 +68,7 @@ class FugitiveInterception():
 
         return walk
 
-    def f(self, P, mode='optimization'):
+    def f(self, trees, mode='optimization'):
         T = self.T
         U = self.U
         R = self.R
@@ -101,49 +101,53 @@ class FugitiveInterception():
             policies = [None]
 
             for t in range(1, T):
-                # determine action from policy tree P based on indicator states
-                #action, rules = P.evaluate(states=[t] + [sensor_detections['sensor' + str(s)][t] for s in range(self.num_sensors)])  #detection at t #TODO is it t or t-1?
-                action, rules = P.evaluate(states=[t] + [int(any(sensor_detections['sensor' + str(s)][:t])) for s in range(
-                    self.num_sensors)])  # states = list of current values of" ['Minute', 'SensorA']  # detection up until t
+                #eval tree for each unit
+                for u in range(U):
+                    P=trees[u]
+                    # determine action from policy tree P based on indicator states
+                    #action, rules = P.evaluate(states=[t] + [sensor_detections['sensor' + str(s)][t] for s in range(self.num_sensors)])  #detection at t #TODO is it t or t-1?
+                    action, rules = P.evaluate(states=[t] + [int(any(sensor_detections['sensor' + str(s)][:t])) for s in range(
+                        self.num_sensors)])  # states = list of current values of" ['Minute', 'SensorA']  # detection up until t
 
-                # evaluate state transition function, given the action from the tree
-                # the state transition function gives the next node for each of the units, given the current node and the action
+                    # evaluate state transition function, given the action from the tree
+                    # the state transition function gives the next node for each of the units, given the current node and the action
 
-                # 1) update planned paths
-                unit_affected, _, target_node = action.split('_')
-                #unit_affected_nr = int(list(unit_affected)[-1])
-                units_targetnodes[unit_affected] = self.nodesdict_perunit_sorted[unit_affected][target_node]
-                try:
-                    if units_plan[unit_affected][-1] != target_node:
+                    # 1) update planned paths
+                    # TODO: unit_affected is always u (dep on arguments passed to each tree)
+                    unit_affected, _, target_node = action.split('_')
+                    #unit_affected_nr = int(list(unit_affected)[-1])
+                    units_targetnodes[unit_affected] = self.nodesdict_perunit_sorted[unit_affected][target_node]
+                    try:
+                        if units_plan[unit_affected][-1] != target_node:
+                            if nx.has_path(G=self.graph, source=units_current[unit_affected], target=self.nodesdict_perunit_sorted[unit_affected][target_node]):
+                                units_plan[unit_affected] = nx.shortest_path(G=self.graph, source=units_current[unit_affected], target=self.nodesdict_perunit_sorted[unit_affected][target_node])
+                            del units_plan[unit_affected][0]  # is source node (= current node)
+                    except IndexError:
                         if nx.has_path(G=self.graph, source=units_current[unit_affected], target=self.nodesdict_perunit_sorted[unit_affected][target_node]):
-                            units_plan[unit_affected] = nx.shortest_path(G=self.graph, source=units_current[unit_affected], target=self.nodesdict_perunit_sorted[unit_affected][target_node])
-                        del units_plan[unit_affected][0]  # is source node (= current node)
-                except IndexError:
-                    if nx.has_path(G=self.graph, source=units_current[unit_affected], target=self.nodesdict_perunit_sorted[unit_affected][target_node]):
-                        units_plan[unit_affected] = nx.shortest_path(G=self.graph, source=units_current[unit_affected],
-                                                                     target=self.nodesdict_perunit_sorted[unit_affected][target_node])
-                    if len(units_plan[unit_affected]) > 1:
-                        del units_plan[unit_affected][0]  # is source node (= current node), but only if source =/= target
+                            units_plan[unit_affected] = nx.shortest_path(G=self.graph, source=units_current[unit_affected],
+                                                                         target=self.nodesdict_perunit_sorted[unit_affected][target_node])
+                        if len(units_plan[unit_affected]) > 1:
+                            del units_plan[unit_affected][0]  # is source node (= current node), but only if source =/= target
 
-                # 2) update current position
-                for u in range(U):
-                    if len(units_plan[f'unit{u}']) > 0:
-                        units_current[f'unit{u}'] = units_plan[f'unit{u}'][0]
-                # 3) delete first entry from path list;
-                for u in range(U):
-                    if len(units_plan[f'unit{u}']) > 0:
-                        del units_plan[f'unit{u}'][0]
-                # 4) log past positions
-                for u in range(U):
-                    unit_route[f'unit{u}'].append(units_current[f'unit{u}'])
+                    # 2) update current position
+                    for u in range(U):
+                        if len(units_plan[f'unit{u}']) > 0:
+                            units_current[f'unit{u}'] = units_plan[f'unit{u}'][0]
+                    # 3) delete first entry from path list;
+                    for u in range(U):
+                        if len(units_plan[f'unit{u}']) > 0:
+                            del units_plan[f'unit{u}'][0]
+                    # 4) log past positions
+                    for u in range(U):
+                        unit_route[f'unit{u}'].append(units_current[f'unit{u}'])
 
-                # for rollout / visualization
-                if mode == 'simulation':
-                    policies.append(action)
+                    # for rollout / visualization
+                    if mode == 'simulation':
+                        policies.append(action)
 
-            for u in range(U):
-                unit_routes_final[f'route{r}'][f'unit{u}'] = unit_route[f'unit{u}']
-                unit_targetnodes_final[f'route{r}'][f'unit{u}'] = units_targetnodes[f'unit{u}']
+                for u in range(U):
+                    unit_routes_final[f'route{r}'][f'unit{u}'] = unit_route[f'unit{u}']
+                    unit_targetnodes_final[f'route{r}'][f'unit{u}'] = units_targetnodes[f'unit{u}']
 
         df = pd.DataFrame()
         if mode == 'simulation':
@@ -182,6 +186,7 @@ class FugitiveInterception():
 
             else:
                 interception_pct_final = (R - interception_pct) / R
+                # TODO make that work for the perunit mode
                 return [interception_pct_final, P.L.__len__()]  # multiobj 2: prob of intercept & number of nodes
 
 

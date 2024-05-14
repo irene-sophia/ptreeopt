@@ -54,13 +54,14 @@ class PTreeOpt(object):
     process_log_message = ('{} nfe; {} sec; '
                 '{}; {}')
 
-    def __init__(self, f, feature_bounds, discrete_actions=False,
+    def __init__(self, f, num_units, feature_bounds, discrete_actions=False,
                  action_bounds=None, action_names=None,
                  population_size=100, mu=15, max_depth=4, mut_prob=0.9,
                  cx_prob=0.9, feature_names=None,
                  discrete_features=None, multiobj=False, epsilons=None):
 
         self.f = functools.partial(function_runner, f)
+        self.U = num_units
         self.num_features = len(feature_bounds)
         self.feature_bounds = feature_bounds
         self.discrete_actions = discrete_actions
@@ -134,30 +135,31 @@ class PTreeOpt(object):
         # random new children with probability (1-cx_prob)
         children = set(range(self.popsize)) - set(parents)
 
-        for i in parents[1:]:
-            child = self.mutate(self.population[i])
-            child.prune()
-            self.population[i] = child
+        for u in range(self.U):
+            for i in parents[1:]:
+                child = self.mutate(self.population[i][u], u=u)
+                child.prune()
+                self.population[i][u] = child
 
-        # then crossover to develop the rest of the population
-        for i in children:
+            # then crossover to develop the rest of the population
+            for i in children:
 
-            if np.random.rand() < self.cx_prob:
-                P1, P2 = np.random.choice(
-                    self.population[parents], 2, replace=False)
-                child = self.crossover(P1, P2)[0]
-
-                # bloat control
-                while child.get_depth() > self.max_depth:
+                if np.random.rand() < self.cx_prob:
+                    P1, P2 = np.random.choice(
+                        self.population[parents][u], 2, replace=False)
                     child = self.crossover(P1, P2)[0]
 
-            else:  # replace with randomly generated child
-                child = self.random_tree()
-                # child = np.random.choice(self.population[parents], 1)[0]
+                    # bloat control
+                    while child.get_depth() > self.max_depth:
+                        child = self.crossover(P1, P2)[0]
 
-            child = self.mutate(child)
-            child.prune()
-            self.population[i] = child
+                else:  # replace with randomly generated child
+                    child = self.random_tree(u=u)  # TODO: u as argument?
+                    # child = np.random.choice(self.population[parents], 1)[0]
+
+                child = self.mutate(child, u=u)
+                child.prune()
+                self.population[i][u] = child
 
     def run(self, max_nfe=1000, log_frequency=100, snapshot_frequency=100,
             executor=SequentialExecutor()):
@@ -189,8 +191,8 @@ class PTreeOpt(object):
 
         self.best_f = None
         self.best_p = None
-        self.population = np.array([self.random_tree() for _ in
-                                    range(self.popsize)])
+        self.population = np.array([[self.random_tree(u=u) for u in range(self.U)] for _ in
+                                    range(self.popsize)])  # IvD 20/10/23
 
         if snapshot_frequency is not None:
             snapshots = {'nfe': [], 'time': [], 'best_f': [],
@@ -199,20 +201,21 @@ class PTreeOpt(object):
             snapshots = None
 
         while nfe < max_nfe:
-            for member in self.population:
-                member.clear_count() # reset action counts to zero
+            # for member in self.population:
+            #     member.clear_count() # reset action counts to zero  # commented out IvD 20/10/23
 
-            # evaluate objectives            
+            # evaluate objectives
+            # for list of populations
             population, objectives = executor.map(self.f, self.population)
             
             self.objectives = objectives
             self.population = np.asarray(population)
 
-            for member in population:
-                member.normalize_count() # convert action count to percent
+            # for member in population:
+            #     member.normalize_count()  # convert action count to percent  # commented out IvD 20/10/23
 
-            nfe += self.popsize
-
+            nfe += (self.popsize)
+            # per population (each unit)
             self.iterate()
 
             if nfe >= last_log + log_frequency:
@@ -238,7 +241,7 @@ class PTreeOpt(object):
         else:
             return self.best_p, self.best_f
 
-    def random_tree(self, terminal_ratio=0.5):
+    def random_tree(self, u, terminal_ratio=0.5):
         '''
         
         Parameters
@@ -258,7 +261,7 @@ class PTreeOpt(object):
             if current_depth == depth or (current_depth > 0 and\
                                       np.random.rand() < terminal_ratio):
                 if self.discrete_actions:
-                    L.append([str(np.random.choice(self.action_names))])
+                    L.append([str(np.random.choice(self.action_names[u]))])  # IvD 23/10/23
                 else:
                     L.append([np.random.uniform(*self.action_bounds)])
 
@@ -294,7 +297,7 @@ class PTreeOpt(object):
         P2.build()
         return (P1, P2)
 
-    def mutate(self, P, mutate_actions=True):
+    def mutate(self, P, u, mutate_actions=True):
         P = copy.deepcopy(P)
 
         for item in P.L:
@@ -308,7 +311,7 @@ class PTreeOpt(object):
                             item.threshold, [low, high])
                 elif mutate_actions:
                     if self.discrete_actions:
-                        item.value = str(np.random.choice(self.action_names))
+                        item.value = str(np.random.choice(self.action_names[u]))
                     else:
                         item.value = self.bounded_gaussian(
                             item.value, self.action_bounds)

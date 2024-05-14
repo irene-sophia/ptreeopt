@@ -2,7 +2,10 @@
 .DS_Store
 /graphviz/
 /fugitive_interceptions/figs/
+/fugitive_interceptions/cache/
+/fugitive_interceptions/graphs/
 /fugitive_interceptions/results/
+/fugitive_interceptions/results_HPC/
 /venv/
 
 #################

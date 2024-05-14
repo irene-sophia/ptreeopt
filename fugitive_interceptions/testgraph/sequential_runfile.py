@@ -91,8 +91,8 @@ if __name__ == '__main__':
     graph, labels, pos = test_graph_3_func()
     units_start = [(5, 1)]
     fugitive_start = (0, 1)
-    # sensor_locations = [(2, 2)]
-    sensor_locations = [(0, 1)]
+    sensor_locations = [(2, 2)]
+    # sensor_locations = [(0, 1)]
 
     # simulate fugitive escape routes
     # fugitive_routes_db = []

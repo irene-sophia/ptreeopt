@@ -11,13 +11,14 @@ import logging
 from random import sample
 import random
 
-from ptreeopt.fugitive_interceptions.interception_model_sorted_filtered import FugitiveInterception
+from ptreeoptperunit.fugitive_interceptions.interception_model_sf_perunit import FugitiveInterception
 from ptreeopt.fugitive_interceptions.visualization import plot_result
 # from ptreeopt.fugitive_interceptions.networks import rotterdam_graph as graph_func
-from ptreeopt.fugitive_interceptions.networks import manhattan_graph as graph_func
+from ptreeoptperunit.fugitive_interceptions.networks import manhattan_graph as graph_func
 
-from ptreeopt.ptreeopt import PTreeOpt
-from ptreeopt.ptreeopt.plotting import *
+from ptreeoptperunit.ptreeopt import PTreeOpt
+from ptreeoptperunit.ptreeopt.plotting import *
+from ptreeoptperunit.ptreeopt.executors import SequentialExecutor, MPIExecutor, MultiprocessingExecutor
 
 
 def unit_nodes(start_police, graph, run_length, U):
@@ -49,7 +50,7 @@ def sort_and_filter_nodes(graph, start_fugitive, route_fugitive, unit_nodes, U):
 
     nodesdict_perunit_sorted = {}
     nodesdict_perunit_inv_sorted = {}
-    actions = []
+    actions = {}
 
     for u in range(U):
         police_nodes = set([y for x in [unit_nodes[u]] for y in x])
@@ -61,12 +62,13 @@ def sort_and_filter_nodes(graph, start_fugitive, route_fugitive, unit_nodes, U):
         nodesdict_perunit_inv_sorted['unit'+str(u)] = {'node' + str(index): node for index, node in enumerate(sorted(subgraph.nodes(), key=lambda n: subgraph.nodes[n]['distance']))}
 
         actions_unit = [f"unit{u}_to_node{i}" for i, node in enumerate(sorted(subgraph.nodes(), key=lambda n: subgraph.nodes[n]['distance']))]
-        actions.extend(actions_unit)
+        actions[u] = actions_unit
+        # actions.extend(actions_unit)
 
     return nodesdict_perunit_sorted, nodesdict_perunit_inv_sorted, actions
 
 
-def run_instance(N, U, R, num_sensors, num_seeds):
+def run_instance(N, U, R, num_sensors, num_seeds, instance):
     results_instance = pd.DataFrame()
 
     graph, labels, pos = graph_func(N=N)  # change labels to pointers
@@ -101,7 +103,7 @@ def run_instance(N, U, R, num_sensors, num_seeds):
                                      num_sensors=num_sensors, sensor_locations=sensor_locations,
                                      seed=seed_rep)
 
-        algorithm = PTreeOpt(model.f,
+        algorithm = PTreeOpt(model.f, num_units=U,
                              feature_bounds=[[0, T]] + [[0.5, 1.5]] * num_sensors,  # indicators
                              feature_names=['Minute'] + [f"sensor{s}" for s in range(num_sensors)],  # indicator names
                              discrete_features=['Minute'] + [f"sensor{s}" for s in range(num_sensors)],
@@ -116,9 +118,10 @@ def run_instance(N, U, R, num_sensors, num_seeds):
         logging.basicConfig(level=logging.INFO,
                             format='[%(processName)s/%(levelname)s:%(filename)s:%(funcName)s] %(message)s')
 
-        best_solution, best_score, snapshots = algorithm.run(max_nfe=2000,
+        best_solution, best_score, snapshots = algorithm.run(max_nfe=5000,
                                                              log_frequency=100,
-                                                             snapshot_frequency=100)
+                                                             snapshot_frequency=100,
+                                                             executor=MultiprocessingExecutor())
 
         # pickle.dump(snapshots, open('results/sorted_filtered/snapshots_rep{}_seed{}.pkl'.format(instance, seed_rep), 'wb'))
         #
@@ -138,8 +141,8 @@ def run_instance(N, U, R, num_sensors, num_seeds):
 
         results_instance = pd.concat([results_instance, convergence_df])
 
-        print('finished seed ', seed_rep + 1, 'of repetition ', instance + 1, '(experiment number ',
-              (instance * num_seeds) + seed_rep + 1, 'of ', (num_seeds * num_repetitions), ').')
+        # print('finished seed ', seed_rep + 1, 'of repetition ', instance + 1, '(experiment number ',
+        #       (instance * num_seeds) + seed_rep + 1, 'of ', (num_seeds * num_repetitions), ').')
 
         # results_df, success = model.f(best_solution, mode='simulation')  # re-initializes! only use for visuals
         # print('Simulation: interception percentage: ', (sum(success.values()) * 100)/R)
@@ -156,14 +159,15 @@ def run_instance(N, U, R, num_sensors, num_seeds):
 if __name__ == '__main__':
     N = 10
     T = int(5 + (0.5 * N))
-    U = 3
+    U = 10
     R = 100
-    num_sensors = 3
+    num_sensors = 10
 
-    num_repetitions = 10
-    num_seeds = 2
+    num_repetitions = 1
+    num_seeds = 5
 
-    for instance in range(num_repetitions):
-        results_instance = run_instance(N, U, R, num_sensors, num_seeds)
+    # for instance in range(num_repetitions):
+    for instance in [1]:
+        results_instance = run_instance(N, U, R, num_sensors, num_seeds, instance)
 
         print(results_instance)
